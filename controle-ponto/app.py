@@ -1,5 +1,8 @@
 import locale
-locale.setlocale(locale.LC_TIME, 'Portuguese_Brazil.1252')
+try:
+    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')  # Para sistemas Linux
+except locale.Error:
+    locale.setlocale(locale.LC_TIME, '')  # Fallback para o padrão do sistema
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, time, timedelta
