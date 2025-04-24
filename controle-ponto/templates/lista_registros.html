@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Filtrar Horários{% endblock %}
+
+{% block content %}
+<h2>Filtrar Horários Registrados</h2>
+<form method="GET">
+    <label>Funcionário:</label>
+    <select name="funcionario_id">
+        <option value="">Todos</option>
+        {% for f in funcionarios %}
+            <option value="{{ f.id }}">{{ f.nome }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Empresa:</label>
+    <select name="empresa_id">
+        <option value="">Todas</option>
+        {% for e in empresas %}
+            <option value="{{ e.id }}">{{ e.nome }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Data Inicial:</label>
+    <input type="date" name="data_ini">
+    <label>Data Final:</label>
+    <input type="date" name="data_fim">
+
+    <button type="submit">Filtrar</button>
+</form>
+
+<hr>
+<h2>Resultados</h2>
+<table>
+    <tr>
+        <th>Funcionário</th>
+        <th>Empresa</th>
+        <th>Data</th>
+        <th>Dia da Semana</th>
+        <th>Entrada 1</th><th>Saída 1</th>
+        <th>Entrada 2</th><th>Saída 2</th>
+        <th>Entrada 3</th><th>Saída 3</th>
+        <th>Horas Diurnas</th>
+        <th>Horas Noturnas</th>
+        <th>Horas Fictas</th>
+        <th>Horas Total</th>
+        <th>Horas Normais</th>
+        <th>Adicional Noturno</th>
+        <th>50% Diurno</th>
+        <th>50% Noturno</th>
+        <th>100% Diurno</th>
+        <th>100% Noturno</th>
+    </tr>
+    {% for p in pontos %}
+    <tr>
+        <td>{{ p.funcionario.nome }}</td>
+        <td>{{ p.empresa.nome }}</td>
+        <td>{{ p.data_obj.strftime('%d/%m') }}</td>
+        <td>{{ p.data_obj.strftime('%A')|capitalize }}</td>
+        <td>{{ p.entrada1 or '' }}</td><td>{{ p.saida1 or '' }}</td>
+        <td>{{ p.entrada2 or '' }}</td><td>{{ p.saida2 or '' }}</td>
+        <td>{{ p.entrada3 or '' }}</td><td>{{ p.saida3 or '' }}</td>
+        <td>{{ p.horas_diurnas_reais|horario_formatado }}</td>
+        <td>{{ p.horas_noturnas|horario_formatado }}</td>
+        <td>{{ p.horas_fictas|horario_formatado }}</td>
+        <td>{{ p.horas_total|horario_formatado }}</td>
+        <td>{{ p.horas_normais|horario_formatado }}</td>
+        <td>{{ p.horas_adicional|horario_formatado }}</td>
+        <td>{{ p.extra_50_diurno|horario_formatado }}</td>
+        <td>{{ p.extra_50_noturno|horario_formatado }}</td>
+        <td>{{ p.extra_100_diurno|horario_formatado }}</td>
+        <td>{{ p.extra_100_noturno|horario_formatado }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

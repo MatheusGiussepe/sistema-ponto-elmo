@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Ponto</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+        nav { background: #333; padding: 10px; }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            padding: 20px;
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background: #333; color: #fff; }
+        tr:nth-child(even) { background: #f1f1f1; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('registro') }}">⏱️ Registrar / Ver Horários</a>
+        <a href="{{ url_for('cadastro_funcionario') }}">🧑‍💼 Cadastrar Funcionário</a>
+        <a href="{{ url_for('cadastro_empresa') }}">🏢 Cadastrar Empresa</a>
+        <a href="{{ url_for('lista_registros') }}">📊 Filtrar Horários</a>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
