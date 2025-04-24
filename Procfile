@@ -1,1 +1,1 @@
-web: gunicorn controle-ponto.app:app
+web: gunicorn app:app

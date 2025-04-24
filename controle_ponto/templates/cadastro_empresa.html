@@ -1,0 +1,24 @@
+<!-- cadastro_empresa.html -->
+{% extends "base.html" %}
+{% block title %}Cadastro de Empresa{% endblock %}
+{% block content %}
+<h2>Cadastro de Empresa</h2>
+<form method="POST">
+  <label for="nome">Nome da Empresa:</label>
+  <input type="text" name="nome" required>
+  <label for="vale_alimentacao">Vale Alimentação:</label>
+  <input type="number" step="0.01" name="vale_alimentacao" required>
+  <button type="submit">Cadastrar</button>
+</form>
+<hr>
+<h3>Empresas Cadastradas</h3>
+<ul>
+  {% for empresa in empresas %}
+    <li>
+      {{ empresa.nome }} - Vale Alimentação: R$ {{ empresa.vale_alimentacao }}
+      <form action="{{ url_for('excluir_empresa', id=empresa.id) }}" method="get"> <button type="submit" onclick="return confirm('Tem certeza que deseja excluir esta empresa?')">🗑️</button>
+      </form>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}
