@@ -193,15 +193,14 @@ def lista_registros():
         else: 
             timedelta(hours=4)
 
-        jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas_reais + ponto.horas_fictas
+            #11:59              04:00                       07:00                       00:59
+        jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas_reais + ponto.horas_fictas #11:59
 
+            #03:59                         11:59            08:00               
         extra_total = max(timedelta(), jornada_total - carga_horaria_diaria)
 
-        horas_normais_noturnas_total = max(timedelta(), ponto.horas_noturnas - extra_total)
 
-        ponto.adicional_noturno = horas_normais_noturnas_total
-
-        ponto.extra_50_noturno = ponto.horas_noturnas - ponto.adicional_noturno
+        ponto.extra_50_noturno = extra_total - ponto.extra_50_diurno
 
         if ponto.data_obj.weekday() > 5:
             ponto.extra_50_diurno = ponto.extra_50_diurno
