@@ -72,5 +72,21 @@
         <td>{{ p.extra_100_noturno|horario_formatado }}</td>
     </tr>
     {% endfor %}
+
+    <tr style="font-weight: bold; background-color: #f2f2f2;">
+        <td colspan="10" style="text-align: right;">Totais:</td>
+        <td>{{ total.horas_diurnas|horario_formatado }}</td>
+        <td>{{ total.horas_noturnas|horario_formatado }}</td>
+        <td>{{ total.horas_fictas|horario_formatado }}</td>
+        <td>{{ total.horas_total|horario_formatado }}</td>
+        <td>{{ total.horas_normais|horario_formatado }}</td>
+        <td>{{ total.horas_adicional|horario_formatado }}</td>
+        <td>{{ total.extra_50_diurno|horario_formatado }}</td>
+        <td>{{ total.extra_50_noturno|horario_formatado }}</td>
+        <td>{{ total.extra_100_diurno|horario_formatado }}</td>
+        <td>{{ total.extra_100_noturno|horario_formatado }}</td>
+    </tr>
+    
 </table>
 {% endblock %}
+
