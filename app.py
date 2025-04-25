@@ -211,7 +211,7 @@ def lista_registros():
                     hora_adicional = ponto.horas_adicional
                     ponto.horas_adicional = ponto.horas_normais
                     ponto.extra_50_noturno = (hora_adicional - ponto.horas_adicional) * 1.142857 + (ponto.horas_adicional * 0.142857)                    
-                    if ponto.extra_50_noturno_reais > 0:
+                    if ponto.extra_50_noturno_reais > timedelta(minutes=0):
                         ponto.extra_50_noturno = ponto.extra_50_noturno + (ponto.extra_50_noturno_reais * 1.142857)
 
 
