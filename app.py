@@ -1,8 +1,8 @@
 import locale
 try:
-    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')  # Para sistemas Linux
+    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 except locale.Error:
-    locale.setlocale(locale.LC_TIME, '')  # Fallback para o padrão do sistema
+    locale.setlocale(locale.LC_TIME, '') 
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, time, timedelta
@@ -105,7 +105,10 @@ def lista_registros():
         ponto.extra_50_noturno_reais = timedelta()
         ponto.extra_100_diurno = timedelta()
         ponto.extra_100_noturno = timedelta()
-        ponto.horas_normais = timedelta(hours=8) if ponto.data_obj.weekday() < 5 else timedelta(hours=4)
+        ponto.horas_normais = timedelta(hours=8) 
+        if ponto.data_obj.weekday() > 4 or ponto.data_obj.weekday() < 6:
+           ponto.horas_normais = timedelta(hours=4)  
+    
 
         turnos = [(ponto.entrada1, ponto.saida1), (ponto.entrada2, ponto.saida2), (ponto.entrada3, ponto.saida3)]
         minutos_marcados = []
@@ -171,13 +174,15 @@ def lista_registros():
 
         ponto.horas_noturnas = ponto.horas_noturnas_reais + ponto.horas_fictas 
         
-        ponto.horas_normais = timedelta(hours=8) if ponto.data_obj.weekday() < 5 else timedelta(hours=4)
+        ponto.horas_normais = timedelta(hours=8) 
+        if ponto.data_obj.weekday() > 4 or ponto.data_obj.weekday() < 6:
+           ponto.horas_normais = timedelta(hours=4)  
         
         ponto.extra_100_noturno = ponto.extra_100_noturno * 1.142857
 
         ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
 
-        carga_horaria_diaria = timedelta(hours=8) if ponto.data_obj.weekday() < 5 else timedelta(hours=4)
+        carga_horaria_diaria = timedelta(hours=8) if ponto.data_obj.weekday() < 5 or ponto.data_obj.weekday() > 5 else timedelta(hours=4)
 
         jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas_reais + ponto.horas_fictas
 
@@ -194,6 +199,18 @@ def lista_registros():
         else:
             ponto.horas_normais = carga_horaria_diaria
 
+        if ponto.data_obj.weekday() == 6 and minuto.date() > ponto.data_obj.date():
+            jornada_total = ponto.extra_100_diurno + ponto.extra_100_noturno
+            if jornada_total > timedelta(hours=8):
+                ponto.extra_50_noturno = (ponto.horas_adicional + ponto.extra_50_noturno_reais ) * 1.142857
+                ponto.horas_adicional = timedelta()
+                ponto.horas_normais = timedelta()
+            else:
+                ponto.horas_normais = timedelta(hours=8) - jornada_total
+                if ponto.horas_adicional > ponto.horas_normais:
+                    hora_adicional = ponto.horas_adicional
+                    ponto.horas_adicional = ponto.horas_normais
+                    ponto.extra_50_noturno = (hora_adicional - ponto.horas_adicional) * 1.142857 + (ponto.horas_adicional * 0.142857)                    
         
 
 
