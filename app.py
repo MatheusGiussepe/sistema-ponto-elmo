@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, time, timedelta
 from extensoes import db
 from models import Funcionario, Empresa, Ponto
+from babel.dates import format_datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///controle_ponto.db'
@@ -54,6 +55,10 @@ def cadastro_empresa():
 
     empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
     return render_template("cadastro_empresa.html", empresas=empresas)
+
+@app.template_filter('formatar_dia_semana')
+def formatar_dia_semana(data):
+    return format_datetime(data, "EEEE", locale='pt_BR').capitalize()
 
 @app.route("/lista-registros", methods=["GET"])
 def lista_registros():
@@ -213,6 +218,10 @@ def lista_registros():
                     ponto.extra_50_noturno = (hora_adicional - ponto.horas_adicional) * 1.142857 + (ponto.horas_adicional * 0.142857)                    
                     if ponto.extra_50_noturno_reais > timedelta(minutes=0):
                         ponto.extra_50_noturno = ponto.extra_50_noturno + (ponto.extra_50_noturno_reais * 1.142857)
+
+        if ponto.data_obj.weekday() == 5 and minuto.date() > ponto.data_obj.date():
+            ponto.extra_50_noturno = ponto.horas_adicional * 0.142857
+
 
 
     return render_template("lista_registros.html", pontos=pontos, funcionarios=funcionarios, empresas=empresas, teste=ponto.extra_50_noturno_reais)

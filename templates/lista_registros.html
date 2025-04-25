@@ -56,7 +56,7 @@
         <td>{{ p.funcionario.nome }}</td>
         <td>{{ p.empresa.nome }}</td>
         <td>{{ p.data_obj.strftime('%d/%m') }}</td>
-        <td>{{ p.data_obj.strftime('%A')|capitalize }}</td>
+        <td>{{ p.data_obj | formatar_dia_semana }}</td>
         <td>{{ p.entrada1 or '' }}</td><td>{{ p.saida1 or '' }}</td>
         <td>{{ p.entrada2 or '' }}</td><td>{{ p.saida2 or '' }}</td>
         <td>{{ p.entrada3 or '' }}</td><td>{{ p.saida3 or '' }}</td>
