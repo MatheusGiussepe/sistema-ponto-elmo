@@ -98,6 +98,9 @@ def lista_registros():
         else:
             ponto.data_obj = ponto.data
 
+    
+            
+
         ponto.horas_diurnas = timedelta()
         ponto.horas_diurnas_reais = timedelta()
         ponto.horas_noturnas_reais = timedelta()
@@ -111,7 +114,7 @@ def lista_registros():
         ponto.extra_100_diurno = timedelta()
         ponto.extra_100_noturno = timedelta()
         ponto.horas_normais = timedelta(hours=8) 
-        if ponto.data_obj.weekday() > 4 or ponto.data_obj.weekday() < 6:
+        if ponto.data_obj.weekday() == 5:
            ponto.horas_normais = timedelta(hours=4)  
     
 
@@ -177,17 +180,18 @@ def lista_registros():
 
         ponto.horas_adicional_ficta = ponto.horas_adicional * 0.142857 # 02:00 * 0.14 = 00:17
 
-        ponto.horas_noturnas = ponto.horas_noturnas_reais + ponto.horas_fictas 
-        
-        ponto.horas_normais = timedelta(hours=8) 
-        if ponto.data_obj.weekday() > 4 or ponto.data_obj.weekday() < 6:
-           ponto.horas_normais = timedelta(hours=4)  
+        ponto.horas_noturnas = ponto.horas_noturnas_reais + ponto.horas_fictas  
         
         ponto.extra_100_noturno = ponto.extra_100_noturno * 1.142857
 
         ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
 
-        carga_horaria_diaria = timedelta(hours=8) if ponto.data_obj.weekday() < 5 or ponto.data_obj.weekday() > 5 else timedelta(hours=4)
+        carga_horaria_diaria = timedelta()
+
+        if ponto.data_obj.weekday() < 5 or ponto.data_obj.weekday() > 5:
+            carga_horaria_diaria = timedelta(hours=8)
+        else: 
+            timedelta(hours=4)
 
         jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas_reais + ponto.horas_fictas
 
@@ -198,6 +202,9 @@ def lista_registros():
         ponto.adicional_noturno = horas_normais_noturnas_total
 
         ponto.extra_50_noturno = ponto.horas_noturnas - ponto.adicional_noturno
+
+        if ponto.data_obj.weekday() > 5:
+            ponto.extra_50_diurno = ponto.extra_50_diurno
 
         if jornada_total < carga_horaria_diaria:
             ponto.horas_normais = jornada_total
@@ -222,9 +229,34 @@ def lista_registros():
         if ponto.data_obj.weekday() == 5 and minuto.date() > ponto.data_obj.date():
             ponto.extra_50_noturno = ponto.horas_adicional * 0.142857
 
+    total = {
+            "horas_diurnas": timedelta(),
+            "horas_noturnas": timedelta(),
+            "horas_fictas": timedelta(),
+            "horas_total": timedelta(),
+            "horas_normais": timedelta(),
+            "horas_adicional": timedelta(),
+            "extra_50_diurno": timedelta(),
+            "extra_50_noturno": timedelta(),
+            "extra_100_diurno": timedelta(),
+            "extra_100_noturno": timedelta(),
+        }
+
+    for ponto in pontos:
+            total["horas_diurnas"] += ponto.horas_diurnas_reais
+            total["horas_noturnas"] += ponto.horas_noturnas
+            total["horas_fictas"] += ponto.horas_fictas
+            total["horas_total"] += ponto.horas_total
+            total["horas_normais"] += ponto.horas_normais
+            total["horas_adicional"] += ponto.horas_adicional
+            total["extra_50_diurno"] += ponto.extra_50_diurno
+            total["extra_50_noturno"] += ponto.extra_50_noturno
+            total["extra_100_diurno"] += ponto.extra_100_diurno
+            total["extra_100_noturno"] += ponto.extra_100_noturno
 
 
-    return render_template("lista_registros.html", pontos=pontos, funcionarios=funcionarios, empresas=empresas, teste=ponto.extra_50_noturno_reais)
+    return render_template("lista_registros.html", pontos=pontos, funcionarios=funcionarios, empresas=empresas, total=total)
+
 
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
@@ -256,6 +288,8 @@ def registro():
     for ponto in pontos:
         if isinstance(ponto.data, str):
             ponto.data = datetime.strptime(ponto.data, "%Y-%m-%d")
+
+            
 
     return render_template("registro.html", funcionarios=funcionarios, empresas=empresas, pontos=pontos)
 
