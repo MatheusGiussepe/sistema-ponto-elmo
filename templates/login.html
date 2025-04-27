@@ -1,0 +1,42 @@
+
+<style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    nav { background: #333; padding: 10px; }
+    nav a {
+        color: white;
+        text-decoration: none;
+        margin-right: 20px;
+        font-weight: bold;
+    }
+    nav a:hover {
+        text-decoration: underline;
+    }
+    .container {
+        padding: 20px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #333; color: #fff; }
+    tr:nth-child(even) { background: #f1f1f1; }
+</style>
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; height: 70vh;">
+    <div style="background: #f5f5f5; padding: 30px 40px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Elmo</h2>
+        {% if erro %}
+            <p style="color: red; text-align: center;">{{ erro }}</p>
+        {% endif %}
+        <form method="POST" style="display: flex; flex-direction: column;">
+            <label for="usuario">Usuário:</label>
+            <input type="text" id="usuario" name="usuario" required style="margin-bottom: 15px; padding: 8px;">
+
+            <label for="senha">Senha:</label>
+            <input type="password" id="senha" name="senha" required style="margin-bottom: 20px; padding: 8px;">
+
+            <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; border-radius: 5px;">
+                Entrar
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

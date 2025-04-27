@@ -3,18 +3,21 @@
 {% block title %}Cadastro de Funcionários{% endblock %}
 
 {% block content %}
-<h2>Cadastro de Funcionários</h2>
-<form method="POST">
-    <input type="text" name="nome" placeholder="Nome do Funcionário" required>
-    <button type="submit">Cadastrar</button>
-</form>
+<div class="container">
+    <h2>Cadastro de Funcionários</h2>
+    <form method="POST" class="form-cadastro">
+        <input type="text" name="nome" placeholder="Nome do Funcionário..." required>
+        <button type="submit" class="btn">Cadastrar</button>
+    </form>
 
-<h3>Funcionários Cadastrados</h3>
-<ul>
-    {% for funcionario in funcionarios %}
-        <li>{{ funcionario.nome }}
-            <a href="{{ url_for('excluir_funcionario', id=funcionario.id) }}">Excluir</a>
-        </li>
-    {% endfor %}
-</ul>
+    <h3>Funcionários Cadastrados</h3>
+    <div class="funcionario-card">
+        {% for f in funcionarios %}
+        <div class="funcionario-item">
+            <span class="funcionario-nome">{{ f.nome }}</span>
+            <a href="{{ url_for('excluir_funcionario', id=f.id) }}" class="btn-excluir">Excluir</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

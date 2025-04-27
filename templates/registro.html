@@ -1,74 +1,111 @@
 {% extends "base.html" %}
 
-{% block title %}Registro de Horários{% endblock %}
+{% block title %}Registrar Horários{% endblock %}
 
 {% block content %}
-<h2>Registrar Horário</h2>
-<form method="POST">
-    <label>Funcionário:</label>
-    <select name="funcionario_id" required>
-        {% for f in funcionarios %}
-            <option value="{{ f.id }}">{{ f.nome }}</option>
+<div class="card">
+    <h2>Registrar Horário</h2>
+    <form class="registro-add" method="POST">
+        <div class="form-group">
+            <label>Funcionário:</label>
+            <select name="funcionario_id" required>
+                {% for f in funcionarios %}
+                    <option value="{{ f.id }}">{{ f.nome }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Empresa:</label>
+            <select name="empresa_id" required>
+                {% for e in empresas %}
+                    <option value="{{ e.id }}">{{ e.nome }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Data:</label>
+            <input type="date" name="data" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Entrada 1:</label>
+            <input type="time" name="entrada1">
+            <label>Saída 1:</label>
+            <input type="time" name="saida1">
+        </div>
+
+        <div class="form-group">
+            <label>Entrada 2:</label>
+            <input type="time" name="entrada2">
+            <label>Saída 2:</label>
+            <input type="time" name="saida2">
+        </div>
+
+        <div class="form-group">
+            <label>Entrada 3:</label>
+            <input type="time" name="entrada3">
+            <label>Saída 3:</label>
+            <input type="time" name="saida3">
+        </div>
+
+        <div class="form-group">
+            <button type="submit" class="btn-green">Registrar Horário</button>
+        </div>
+    </form>
+</div>
+
+
+<div class="card p-4 mb-4">
+    <h2>Filtrar Horários Registrados</h2>
+    <form method="GET">
+        <div class="mb-3">
+            <label>Funcionário:</label>
+            <select name="funcionario_id">
+                <option value="">Todos</option>
+                {% for f in funcionarios %}
+                    <option value="{{ f.id }}">{{ f.nome }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Data Inicial:</label>
+            <input type="date" name="data_ini">
+
+            <label>Data Final:</label>
+            <input type="date" name="data_fim">
+
+            <button type="submit" class="btn-green">Filtrar</button>
+        </div>
+    </form>
+</div>
+
+<div class="card p-4">
+    <h2>Horários Registrados</h2>
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th>Funcionário</th>
+                <th>Empresa</th>
+                <th>Data</th>
+                <th>Entrada 1</th><th>Saída 1</th>
+                <th>Entrada 2</th><th>Saída 2</th>
+                <th>Entrada 3</th><th>Saída 3</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in pontos %}
+            <tr>
+                <td>{{ p.funcionario.nome }}</td>
+                <td>{{ p.empresa.nome }}</td>
+                <td>{{ p.data_obj.strftime('%d/%m') }}</td>
+                <td>{{ p.entrada1 or '' }}</td>
+                <td>{{ p.saida1 or '' }}</td>
+                <td>{{ p.entrada2 or '' }}</td>
+                <td>{{ p.saida2 or '' }}</td>
+                <td>{{ p.entrada3 or '' }}</td>
+                <td>{{ p.saida3 or '' }}</td>
+                <td><a href="{{ url_for('excluir_ponto', id=p.id) }}" class="btn-red">Excluir</a></td>
+            </tr>
         {% endfor %}
-    </select><br><br>
-
-    <label>Empresa:</label>
-    <select name="empresa_id" required>
-        {% for e in empresas %}
-            <option value="{{ e.id }}">{{ e.nome }}</option>
-        {% endfor %}
-    </select><br><br>
-
-    <label>Data:</label>
-    <input type="date" name="data" required><br><br>
-
-    <label>Entrada 1:</label>
-    <input type="time" name="entrada1">
-    <label>Saída 1:</label>
-    <input type="time" name="saida1"><br><br>
-
-    <label>Entrada 2:</label>
-    <input type="time" name="entrada2">
-    <label>Saída 2:</label>
-    <input type="time" name="saida2"><br><br>
-
-    <label>Entrada 3:</label>
-    <input type="time" name="entrada3">
-    <label>Saída 3:</label>
-    <input type="time" name="saida3"><br><br>
-
-    <button type="submit">Registrar Horário</button>
-</form>
-
-<hr>
-
-<h2>Horários Registrados</h2>
-<table>
-    <tr>
-        <th>Funcionário</th>
-        <th>Empresa</th>
-        <th>Data</th>
-        <th>Entrada 1</th>
-        <th>Saída 1</th>
-        <th>Entrada 2</th>
-        <th>Saída 2</th>
-        <th>Entrada 3</th>
-        <th>Saída 3</th>
-        <th>Excluir</th>
-    </tr>
-    {% for p in pontos %}
-    <tr>
-        <td>{{ p.funcionario.nome }}</td>
-        <td>{{ p.empresa.nome }}</td>
-        <td>{{ p.data.strftime('%d/%m') }}</td>
-        <td>{{ p.entrada1 or '' }}</td>
-        <td>{{ p.saida1 or '' }}</td>
-        <td>{{ p.entrada2 or '' }}</td>
-        <td>{{ p.saida2 or '' }}</td>
-        <td>{{ p.entrada3 or '' }}</td>
-        <td>{{ p.saida3 or '' }}</td>
-        <td><a href="{{ url_for('excluir_ponto', id=p.id) }}">Excluir</a></td>
-    </tr>
-    {% endfor %}
-</table>
+        </tbody>
+    </table>
+</div>
 {% endblock %}

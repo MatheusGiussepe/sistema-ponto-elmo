@@ -3,7 +3,7 @@ try:
     locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 except locale.Error:
     locale.setlocale(locale.LC_TIME, '') 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, time, timedelta
 from extensoes import db
@@ -11,12 +11,32 @@ from models import Funcionario, Empresa, Ponto
 from babel.dates import format_datetime
 
 app = Flask(__name__)
+app.secret_key = 'é_segredo'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///controle_ponto.db'
 db.init_app(app)
 
-# Função auxiliar para lidar com campos de horário vazios
+
 def limpar_horario(valor):
     return valor if valor else None
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        usuario = request.form["usuario"]
+        senha = request.form["senha"]
+        if usuario == "admin" and senha == "senha123":
+            session["usuario_logado"] = True
+            return redirect(url_for("registro"))
+        else:
+            flash("Usuário ou senha inválidos!")
+            return redirect(url_for("login"))
+    
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.pop("usuario_logado", None)
+    return redirect(url_for("login"))
 
 @app.template_filter('horario_formatado')
 def horario_formatado(value):
@@ -33,6 +53,10 @@ def index():
 
 @app.route("/funcionarios", methods=["GET", "POST"])
 def cadastro_funcionario():
+    
+    if not session.get("usuario_logado"):
+        return redirect(url_for("login"))
+
     if request.method == "POST":
         nome = request.form["nome"]
         novo_funcionario = Funcionario(nome=nome)
@@ -45,6 +69,10 @@ def cadastro_funcionario():
 
 @app.route("/cadastro_empresa", methods=["GET", "POST"])
 def cadastro_empresa():
+
+    if not session.get("usuario_logado"):
+        return redirect(url_for("login"))
+
     if request.method == "POST":
         nome = request.form["nome"]
         vale = request.form["vale_alimentacao"]
@@ -56,12 +84,12 @@ def cadastro_empresa():
     empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
     return render_template("cadastro_empresa.html", empresas=empresas)
 
-@app.template_filter('formatar_dia_semana')
-def formatar_dia_semana(data):
-    return format_datetime(data, "EEEE", locale='pt_BR').capitalize()
-
 @app.route("/lista-registros", methods=["GET"])
 def lista_registros():
+
+    if not session.get("usuario_logado"):
+        return redirect(url_for("login"))
+
     funcionarios = Funcionario.query.order_by(Funcionario.nome.asc()).all()
     empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
 
@@ -207,6 +235,7 @@ def lista_registros():
 
         if jornada_total < carga_horaria_diaria:
             ponto.horas_normais = jornada_total
+            ponto.horas_adicional = ponto.horas_noturnas
         else:
             ponto.horas_normais = carga_horaria_diaria
 
@@ -278,19 +307,37 @@ def registro():
             entrada3=limpar_horario(request.form["entrada3"]),
             saida3=limpar_horario(request.form["saida3"])
         )
-
         db.session.add(novo_ponto)
         db.session.commit()
         return redirect(url_for("registro"))
- 
-    pontos = Ponto.query.order_by(Ponto.data.asc()).all()
+
+    query = Ponto.query
+
+    funcionario_id = request.args.get("funcionario_id")
+    data_ini = request.args.get("data_ini")
+    data_fim = request.args.get("data_fim")
+
+    if funcionario_id:
+        query = query.filter_by(funcionario_id=funcionario_id)
+    if data_ini:
+        query = query.filter(Ponto.data >= data_ini)
+    if data_fim:
+        query = query.filter(Ponto.data <= data_fim)
+
+    pontos = query.order_by(Ponto.id.asc()).all()  # Ordenar pelo ID de criação, não pela data
+
     for ponto in pontos:
         if isinstance(ponto.data, str):
-            ponto.data = datetime.strptime(ponto.data, "%Y-%m-%d")
-
-            
+            ponto.data_obj = datetime.strptime(ponto.data, "%Y-%m-%d")
+        else:
+            ponto.data_obj = ponto.data
 
     return render_template("registro.html", funcionarios=funcionarios, empresas=empresas, pontos=pontos)
+
+
+@app.template_filter('formatar_dia_semana')
+def formatar_dia_semana(data):
+    return format_datetime(data, "EEEE", locale='pt_BR').capitalize()
 
 @app.route("/excluir_ponto/<int:id>")
 def excluir_ponto(id):

@@ -2,37 +2,27 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de Ponto</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
-        nav { background: #333; padding: 10px; }
-        nav a {
-            color: white;
-            text-decoration: none;
-            margin-right: 20px;
-            font-weight: bold;
-        }
-        nav a:hover {
-            text-decoration: underline;
-        }
-        .container {
-            padding: 20px;
-        }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        th { background: #333; color: #fff; }
-        tr:nth-child(even) { background: #f1f1f1; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema Elmo{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <nav>
-        <a href="{{ url_for('registro') }}">⏱️ Registrar / Ver Horários</a>
-        <a href="{{ url_for('cadastro_funcionario') }}">🧑‍💼 Cadastrar Funcionário</a>
-        <a href="{{ url_for('cadastro_empresa') }}">🏢 Cadastrar Empresa</a>
-        <a href="{{ url_for('lista_registros') }}">📊 Filtrar Horários</a>
-    </nav>
-    <div class="container">
+    <header class="navbar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='elmo_logo.png') }}" alt="Logo Elmo" height="60">
+        </div>
+        <div class="menu">
+            <a href="{{ url_for('cadastro_funcionario') }}" class="btn">👤 Funcionário</a>
+            <a href="{{ url_for('cadastro_empresa') }}" class="btn">🏢 Empresa</a>
+            <a href="{{ url_for('registro') }}" class="btn">⏱️ Registrar</a>
+            <a href="{{ url_for('lista_registros') }}" class="btn">📋 Registros</a>
+            <a href="{{ url_for('logout') }}" class="btn logout-btn">🚪 Sair</a>
+        </div>
+    </header>
+    </header>
+
+    <main class="container">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 </body>
 </html>
