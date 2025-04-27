@@ -59,7 +59,7 @@
             </thead>
             <tbody>
                 {% for p in pontos %}
-                <tr>
+                <tr class="{% if p.data_obj.strftime('%A') == 'domingo' %}domingo{% endif %}">
                     <td>{{ p.funcionario.nome }}</td>
                     <td>{{ p.empresa.nome }}</td>
                     <td>{{ p.data_obj.strftime('%d/%m') }}</td>
@@ -80,6 +80,21 @@
                 </tr>
                 {% endfor %}
             </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="10">Total</td>
+                    <td>{{ total.horas_diurnas|horario_formatado }}</td>
+                    <td>{{ total.horas_noturnas|horario_formatado }}</td>
+                    <td>{{ total.horas_fictas|horario_formatado }}</td>
+                    <td>{{ total.horas_total|horario_formatado }}</td>
+                    <td>{{ total.horas_normais|horario_formatado }}</td>
+                    <td>{{ total.horas_adicional|horario_formatado }}</td>
+                    <td>{{ total.extra_50_diurno|horario_formatado }}</td>
+                    <td>{{ total.extra_50_noturno|horario_formatado }}</td>
+                    <td>{{ total.extra_100_diurno|horario_formatado }}</td>
+                    <td>{{ total.extra_100_noturno|horario_formatado }}</td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 </div>
