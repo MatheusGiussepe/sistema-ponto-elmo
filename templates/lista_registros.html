@@ -59,7 +59,7 @@
             </thead>
             <tbody>
                 {% for p in pontos %}
-                <tr class="{% if p.data_obj.strftime('%A') == 'domingo' %}domingo{% endif %}">
+                <tr class="{% if p.data_obj | formatar_dia_semana == 'Domingo' %}domingo{% endif %}">
                     <td>{{ p.funcionario.nome }}</td>
                     <td>{{ p.empresa.nome }}</td>
                     <td>{{ p.data_obj.strftime('%d/%m') }}</td>
