@@ -7,19 +7,59 @@
     <h2>Cadastro de Empresas</h2>
     <form method="POST" class="form-cadastro">
         <input type="text" name="nome" placeholder="Nome da Empresa..." required>
-        <input type="text" name="vale_alimentacao" placeholder="Vale Alimentação (valor)..." required>
+        <input type="text" name="vale_alimentacao" placeholder="Vale Alimentação..." required>
         <button type="submit" class="btn">Cadastrar</button>
     </form>
 
     <h3>Empresas Cadastradas</h3>
-    <div class="empresa-card">
-      {% for item in empresas %}
-      <div class="empresa-item">
-          <span class="empresa-nome">{{ item.nome }}</span>
-          <span class="empresa-vale">Vale-Alimentação: R$ {{ "%.2f"|format(item.vale_alimentacao|float) }}</span>
-          <a href="{{ url_for('excluir_empresa', id=item.id) }}" class="btn-excluir">Excluir</a>
-      </div>
-      {% endfor %}
-  </div>
+    <div class="funcionario-card">
+        {% for e in empresas %}
+        <div class="funcionario-item">
+            <span class="funcionario-nome">{{ e.nome }} — Vale: R$ {{ e.vale_alimentacao }}</span>
+            <div>
+                <button class="btn-edit"
+                        data-id="{{ e.id }}"
+                        data-nome="{{ e.nome|e }}"
+                        data-vale="{{ e.vale_alimentacao|e }}"
+                        onclick="abrirModalEmpresa(this)"
+                        title="Editar">✏️</button>
+
+                <a href="{{ url_for('excluir_empresa', id=e.id) }}" class="btn-excluir">🗑️</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
+
+<!-- Modal de edição -->
+<div id="modal-editar-empresa" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="fecharModalEmpresa()">&times;</span>
+        <h3>Editar Empresa</h3>
+        <form method="POST" id="form-editar-empresa">
+            <input type="hidden" name="id" id="edit-empresa-id">
+            <label>Nome:</label>
+            <input type="text" name="nome" id="edit-empresa-nome" required>
+            <label>Vale Alimentação:</label>
+            <input type="text" name="vale_alimentacao" id="edit-empresa-vale" required>
+            <button type="submit" class="btn-green">Salvar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalEmpresa(botao) {
+    const id = botao.dataset.id;
+    const nome = botao.dataset.nome;
+    const vale = botao.dataset.vale;
+    document.getElementById("modal-editar-empresa").style.display = "block";
+    document.getElementById("edit-empresa-id").value = id;
+    document.getElementById("edit-empresa-nome").value = nome;
+    document.getElementById("edit-empresa-vale").value = vale;
+    document.getElementById("form-editar-empresa").action = "/editar_empresa/" + id;
+}
+function fecharModalEmpresa() {
+    document.getElementById("modal-editar-empresa").style.display = "none";
+}
+</script>
 {% endblock %}

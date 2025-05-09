@@ -16,9 +16,53 @@
         {% for f in funcionarios %}
         <div class="funcionario-item">
             <span class="funcionario-nome">{{ f.nome }} — CPF: {{ f.cpf or 'Não informado' }}</span>
-            <a href="{{ url_for('excluir_funcionario', id=f.id) }}" class="btn-excluir">Excluir</a>
+            <div>
+                <button class="btn-edit"
+                        data-id="{{ f.id }}"
+                        data-nome="{{ f.nome|e }}"
+                        data-cpf="{{ f.cpf|e }}"
+                        onclick="abrirModalComDataset(this)">✏️</button>
+                <a href="{{ url_for('excluir_funcionario', id=f.id) }}" class="btn-excluir">🗑️</a>
+            </div>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<!-- Modal de edição -->
+<div id="modal-editar" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="fecharModal()">&times;</span>
+        <h3>Editar Funcionário</h3>
+        <form method="POST" id="form-editar">
+            <input type="hidden" name="id" id="edit-id">
+            <label>Nome:</label>
+            <input type="text" name="nome" id="edit-nome" required>
+            <label>CPF:</label>
+            <input type="text" name="cpf" id="edit-cpf" maxlength="14" required>
+            <button type="submit" class="btn-green">Salvar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalComDataset(botao) {
+    const id = botao.dataset.id;
+    const nome = botao.dataset.nome;
+    const cpf = botao.dataset.cpf;
+    abrirModal(id, nome, cpf);
+}
+
+function abrirModal(id, nome, cpf) {
+    document.getElementById("modal-editar").style.display = "block";
+    document.getElementById("edit-id").value = id;
+    document.getElementById("edit-nome").value = nome;
+    document.getElementById("edit-cpf").value = cpf;
+    document.getElementById("form-editar").action = "/editar_funcionario/" + id;
+}
+
+function fecharModal() {
+    document.getElementById("modal-editar").style.display = "none";
+}
+</script>
 {% endblock %}

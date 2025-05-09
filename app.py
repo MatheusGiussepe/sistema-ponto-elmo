@@ -59,7 +59,8 @@ def cadastro_funcionario():
 
     if request.method == "POST":
         nome = request.form["nome"]
-        novo_funcionario = Funcionario(nome=nome)
+        cpf = request.form["cpf"]
+        novo_funcionario = Funcionario(nome=nome, cpf=cpf)
         db.session.add(novo_funcionario)
         db.session.commit()
         return redirect(url_for("cadastro_funcionario"))
@@ -388,11 +389,29 @@ def excluir_funcionario(id):
     db.session.commit()
     return redirect(url_for("cadastro_funcionario"))
 
+@app.route("/editar_funcionario/<int:id>", methods=["POST"])
+def editar_funcionario(id):
+    funcionario = Funcionario.query.get_or_404(id)
+    funcionario.nome = request.form["nome"]
+    funcionario.cpf = request.form["cpf"]
+    db.session.commit()
+    flash("Funcionário atualizado com sucesso.")
+    return redirect(url_for("cadastro_funcionario"))
+
 @app.route("/excluir_empresa/<int:id>")
 def excluir_empresa(id):
     empresa = Empresa.query.get_or_404(id)
     db.session.delete(empresa)
     db.session.commit()
+    return redirect(url_for("cadastro_empresa"))
+
+@app.route("/editar_empresa/<int:id>", methods=["POST"])
+def editar_empresa(id):
+    empresa = Empresa.query.get_or_404(id)
+    empresa.nome = request.form["nome"]
+    empresa.vale_alimentacao = request.form["vale_alimentacao"]
+    db.session.commit()
+    flash("Empresa atualizada com sucesso.")
     return redirect(url_for("cadastro_empresa"))
 
 @app.route("/importar", methods=["GET", "POST"])
@@ -424,7 +443,13 @@ def importar_csv():
 
         for linha in leitor:
             nome = linha["'01 - NOME'"].strip().strip("'")
-            cpf = linha["'02 - CPF'"].strip().strip("'")
+            def formatar_cpf(cpf_raw):
+                cpf_raw = ''.join(filter(str.isdigit, cpf_raw))
+                if len(cpf_raw) == 11:
+                    return f"{cpf_raw[:3]}.{cpf_raw[3:6]}.{cpf_raw[6:9]}-{cpf_raw[9:]}"
+                return cpf_raw
+
+            cpf = formatar_cpf(linha["'02 - CPF'"].strip().strip("'"))
             data = linha["'03 - DIA / MÊS'"].strip().strip("'")
 
             entrada1 = limpar_hora(linha["'09 - TURNO 1 - INICIO'"])
@@ -440,7 +465,7 @@ def importar_csv():
 
             funcionario = Funcionario.query.filter_by(nome=nome).first()
             if not funcionario:
-                funcionario = Funcionario(nome=nome)
+                funcionario = Funcionario(nome=nome, cpf=cpf)
                 db.session.add(funcionario)
                 db.session.commit()
 
