@@ -414,3 +414,7 @@ a.btn,
 a.btn-green {
     text-decoration: none;
 }
+
+body {
+    font-family: 'Inter', sans-serif;
+}
