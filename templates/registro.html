@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Registrar Horários{% endblock %}
+{% block title %}Registrar Horárioss{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -49,6 +49,11 @@
         <div class="form-group">
             <button type="submit" class="btn-green">Registrar Horário</button>
         </div>
+
+        <div class="form-group">
+        <a href="{{ url_for('importar_csv') }}" class="btn-green">📥 Importar CSV de Ponto</a>
+        </div>
+
     </form>
 </div>
 
@@ -108,4 +113,6 @@
         </tbody>
     </table>
 </div>
+
+
 {% endblock %}

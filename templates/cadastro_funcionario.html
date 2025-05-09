@@ -7,6 +7,7 @@
     <h2>Cadastro de Funcionários</h2>
     <form method="POST" class="form-cadastro">
         <input type="text" name="nome" placeholder="Nome do Funcionário..." required>
+        <input type="text" name="cpf" placeholder="CPF..." maxlength="14" required>
         <button type="submit" class="btn">Cadastrar</button>
     </form>
 
@@ -14,7 +15,7 @@
     <div class="funcionario-card">
         {% for f in funcionarios %}
         <div class="funcionario-item">
-            <span class="funcionario-nome">{{ f.nome }}</span>
+            <span class="funcionario-nome">{{ f.nome }} — CPF: {{ f.cpf or 'Não informado' }}</span>
             <a href="{{ url_for('excluir_funcionario', id=f.id) }}" class="btn-excluir">Excluir</a>
         </div>
         {% endfor %}

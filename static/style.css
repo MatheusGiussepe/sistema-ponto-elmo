@@ -409,3 +409,8 @@ select:focus, input[type="date"]:focus, input[type="time"]:focus {
     background-color: #d0f0c0;
     font-weight: bold;
 }
+
+a.btn,
+a.btn-green {
+    text-decoration: none;
+}

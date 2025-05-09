@@ -49,7 +49,7 @@ def horario_formatado(value):
 
 @app.route("/")
 def index():
-    return redirect(url_for("registro"))
+    return redirect(url_for("login"))
 
 @app.route("/funcionarios", methods=["GET", "POST"])
 def cadastro_funcionario():
@@ -108,7 +108,9 @@ def lista_registros():
     if data_fim:
         query = query.filter(Ponto.data <= data_fim)
 
-    pontos = query.order_by(Ponto.data.asc()).all()
+    pontos = []
+    if funcionario_id or empresa_id or data_ini or data_fim:
+        pontos = query.order_by(Ponto.data.asc()).all()
 
     INIDIA = time(5, 0)
     FIMDIA = time(22, 0)
@@ -129,21 +131,22 @@ def lista_registros():
     
             
 
-        ponto.horas_diurnas = timedelta()
         ponto.horas_diurnas_reais = timedelta()
         ponto.horas_noturnas_reais = timedelta()
-        ponto.horas_noturnas = timedelta()
+        ponto.horas_fictas = timedelta()
         ponto.horas_adicional = timedelta()
         ponto.horas_adicional_ficta = timedelta()
-        ponto.horas_fictas = timedelta()
+        ponto.horas_diurnas = timedelta()
+        ponto.horas_noturnas = timedelta()
         ponto.horas_total = timedelta()
         ponto.extra_50_diurno = timedelta()
+        ponto.extra_50_noturno = timedelta()
         ponto.extra_50_noturno_reais = timedelta()
         ponto.extra_100_diurno = timedelta()
         ponto.extra_100_noturno = timedelta()
-        ponto.horas_normais = timedelta(hours=8) 
+        ponto.horas_normais = timedelta(hours=8)
         if ponto.data_obj.weekday() == 5:
-           ponto.horas_normais = timedelta(hours=4)  
+            ponto.horas_normais = timedelta(hours=4)
     
 
         turnos = [(ponto.entrada1, ponto.saida1), (ponto.entrada2, ponto.saida2), (ponto.entrada3, ponto.saida3)]
@@ -164,21 +167,52 @@ def lista_registros():
                     minutos_marcados.append(atual)
                     atual += timedelta(minutes=1)
 
+        # Inicialização antes do loop
+        acumulado_domingo = timedelta()
+
+        
+        duracao_dentro_domingo = timedelta()
+
         for minuto in minutos_marcados:
             hora = minuto.time()
             tipo = "diurna"
             if hora >= ININOT or hora < FIMNOT:
                 tipo = "noturna"
 
-            if minuto.weekday() == 6:
-                if tipo == "diurna":
-                    ponto.extra_100_diurno += timedelta(minutes=1)
-                    ponto.horas_diurnas_reais += timedelta(minutes=1)
-                else:
-                    ponto.extra_100_noturno += timedelta(minutes=1)
-                    ponto.horas_noturnas_reais += timedelta(minutes=1)
-                continue
-            elif ponto.data_obj.weekday() == 5 and minuto.date() > ponto.data_obj.date():
+            # DOMINGO (dia real do minuto)
+            if ponto.data_obj.weekday() == 6:
+                dia_real = minuto.weekday()
+
+                if dia_real == 6:
+                    if tipo == "diurna":
+                        ponto.extra_100_diurno += timedelta(minutes=1)
+                        ponto.horas_diurnas_reais += timedelta(minutes=1)
+                    else:
+                        ponto.extra_100_noturno += timedelta(minutes=1)
+                        ponto.horas_noturnas_reais += timedelta(minutes=1)
+                    duracao_dentro_domingo += timedelta(minutes=1)
+                    continue
+
+                elif dia_real == 0:
+                    if duracao_dentro_domingo < timedelta(hours=8):
+                        ponto.horas_normais += timedelta(minutes=1)
+                        if tipo == "diurna":
+                            ponto.horas_diurnas += timedelta(minutes=1)
+                            ponto.horas_diurnas_reais += timedelta(minutes=1)
+                        else:
+                            ponto.horas_noturnas_reais += timedelta(minutes=1)
+                            ponto.horas_adicional += timedelta(minutes=1)
+                    else:
+                        if tipo == "diurna":
+                            ponto.extra_50_diurno += timedelta(minutes=1)
+                            ponto.horas_diurnas_reais += timedelta(minutes=1)
+                        else:
+                            ponto.extra_50_noturno_reais += timedelta(minutes=1)
+                            ponto.horas_noturnas_reais += timedelta(minutes=1)
+                    continue
+
+            # SÁBADO virando domingo
+            if ponto.data_obj.weekday() == 5 and minuto.date() > ponto.data_obj.date():
                 if tipo == "diurna":
                     ponto.extra_100_diurno += timedelta(minutes=1)
                     ponto.horas_diurnas_reais += timedelta(minutes=1)
@@ -187,6 +221,7 @@ def lista_registros():
                     ponto.horas_noturnas_reais += timedelta(minutes=1)
                 continue
 
+            # OUTROS DIAS OU RESTO
             if ponto.horas_normais > timedelta():
                 ponto.horas_normais -= timedelta(minutes=1)
                 if tipo == "diurna":
@@ -204,58 +239,56 @@ def lista_registros():
                     ponto.horas_noturnas_reais += timedelta(minutes=1)
 
 
-        ponto.horas_fictas = ponto.horas_noturnas_reais * 0.142857 # 03:40 * 0.14 = 00:31
-
-        ponto.horas_adicional_ficta = ponto.horas_adicional * 0.142857 # 02:00 * 0.14 = 00:17
-
-        ponto.horas_noturnas = ponto.horas_noturnas_reais + ponto.horas_fictas  
-        
-        ponto.extra_100_noturno = ponto.extra_100_noturno * 1.142857
-
-        ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
-
-        carga_horaria_diaria = timedelta()
-
-        if ponto.data_obj.weekday() < 5 or ponto.data_obj.weekday() > 5:
+        # DIA DE SEMANA (Segunda a Sexta)
+        if ponto.data_obj.weekday() < 5:
+            ponto.horas_noturnas = ponto.horas_noturnas_reais * 1.142857
+            ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
+            ponto.horas_fictas= ponto.horas_noturnas_reais * 0.142857
             carga_horaria_diaria = timedelta(hours=8)
-        else: 
-            timedelta(hours=4)
+            jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
+            
 
-            #11:59              04:00                       07:00                       00:59
-        jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas_reais + ponto.horas_fictas #11:59
-
-            #03:59                         11:59            08:00               
-        extra_total = max(timedelta(), jornada_total - carga_horaria_diaria)
-
-
-        ponto.extra_50_noturno = extra_total - ponto.extra_50_diurno
-
-        if ponto.data_obj.weekday() > 5:
-            ponto.extra_50_diurno = ponto.extra_50_diurno
-
-        if jornada_total < carga_horaria_diaria:
-            ponto.horas_normais = jornada_total
-            ponto.horas_adicional = ponto.horas_noturnas
-        else:
-            ponto.horas_normais = carga_horaria_diaria
-
-        if ponto.data_obj.weekday() == 6 and minuto.date() > ponto.data_obj.date():
-            jornada_total = ponto.extra_100_diurno + ponto.extra_100_noturno
-            if jornada_total > timedelta(hours=8):
-                ponto.extra_50_noturno = (ponto.horas_adicional + ponto.extra_50_noturno_reais ) * 1.142857
-                ponto.horas_adicional = timedelta()
-                ponto.horas_normais = timedelta()
+            if jornada_total < carga_horaria_diaria:
+                ponto.horas_normais = jornada_total
+                
             else:
-                ponto.horas_normais = timedelta(hours=8) - jornada_total
-                if ponto.horas_adicional > ponto.horas_normais:
-                    hora_adicional = ponto.horas_adicional
-                    ponto.horas_adicional = ponto.horas_normais
-                    ponto.extra_50_noturno = (hora_adicional - ponto.horas_adicional) * 1.142857 + (ponto.horas_adicional * 0.142857)                    
-                    if ponto.extra_50_noturno_reais > timedelta(minutes=0):
-                        ponto.extra_50_noturno = ponto.extra_50_noturno + (ponto.extra_50_noturno_reais * 1.142857)
+                ponto.horas_normais = carga_horaria_diaria
+                ponto.extra_50_noturno = ( ponto.extra_50_noturno_reais * 1.142857 ) + ( ponto.horas_adicional * 0.142857 )
+                
+        # SÁBADO
+        if ponto.data_obj.weekday() == 5:
+            ponto.horas_noturnas = ponto.horas_noturnas_reais * 1.142857
+            ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
+            ponto.horas_fictas= ponto.horas_noturnas_reais * 0.142857
+            carga_horaria_diaria = timedelta(hours=4)
+            jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
+            extra_total = max(timedelta(), jornada_total - carga_horaria_diaria)
+            ponto.extra_50_noturno = ponto.extra_50_noturno_reais * 1.142857
 
-        if ponto.data_obj.weekday() == 5 and minuto.date() > ponto.data_obj.date():
-            ponto.extra_50_noturno = ponto.horas_adicional * 0.142857
+            if ponto.horas_adicional > timedelta():
+                ponto.extra_50_noturno = ponto.horas_adicional * 0.142857
+
+            if jornada_total < carga_horaria_diaria:
+                ponto.horas_normais = jornada_total
+                ponto.horas_adicional = ponto.horas_noturnas
+            else:
+                ponto.horas_normais = carga_horaria_diaria
+
+        # DOMINGO
+        if ponto.data_obj.weekday() == 6:
+            ponto.horas_noturnas = ponto.horas_noturnas_reais * 1.142857
+            ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
+            ponto.horas_fictas= ponto.horas_noturnas_reais * 0.142857
+            carga_horaria_diaria = timedelta(hours=8)
+            jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
+
+            if jornada_total < carga_horaria_diaria:
+                ponto.horas_normais = jornada_total
+                    
+            else:
+                ponto.horas_normais = carga_horaria_diaria - (ponto.extra_100_diurno + ponto.extra_100_noturno)
+                ponto.extra_50_noturno = ( ponto.extra_50_noturno_reais * 1.142857 ) + ( ponto.horas_adicional * 0.142857 )
+
 
     total = {
             "horas_diurnas": timedelta(),
@@ -324,7 +357,9 @@ def registro():
     if data_fim:
         query = query.filter(Ponto.data <= data_fim)
 
-    pontos = query.order_by(Ponto.id.asc()).all()  # Ordenar pelo ID de criação, não pela data
+    pontos = []
+    if request.args.get("data_ini") or request.args.get("data_fim") or request.args.get("funcionario_id"):
+        pontos = query.order_by(Ponto.id.asc()).all()
 
     for ponto in pontos:
         if isinstance(ponto.data, str):
@@ -360,7 +395,78 @@ def excluir_empresa(id):
     db.session.commit()
     return redirect(url_for("cadastro_empresa"))
 
+@app.route("/importar", methods=["GET", "POST"])
+def importar_csv():
+    if not session.get("usuario_logado"):
+        return redirect(url_for("login"))
+
+    empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
+
+    if request.method == "POST":
+        empresa_id = request.form["empresa_id"]
+        arquivo = request.files.get("arquivo")
+
+        if not arquivo or not arquivo.filename.endswith(".csv"):
+            flash("Arquivo inválido. Envie um CSV.")
+            return redirect(url_for("importar_csv"))
+
+        from io import TextIOWrapper
+        import csv
+
+        def limpar_hora(valor):
+            valor = valor.strip().strip("'")
+            if not valor or "FERIADO" in valor.upper():
+                return None
+            return valor
+
+        arquivo_stream = TextIOWrapper(arquivo, encoding="utf-8")
+        leitor = csv.DictReader(arquivo_stream)
+
+        for linha in leitor:
+            nome = linha["'01 - NOME'"].strip().strip("'")
+            cpf = linha["'02 - CPF'"].strip().strip("'")
+            data = linha["'03 - DIA / MÊS'"].strip().strip("'")
+
+            entrada1 = limpar_hora(linha["'09 - TURNO 1 - INICIO'"])
+            saida1   = limpar_hora(linha["'10 - TURNO 1 - FIM'"])
+            entrada2 = limpar_hora(linha["'11 - TURNO 2 - INICIO'"])
+            saida2   = limpar_hora(linha["'12 - TURNO 2 - FIM'"])
+            entrada3 = limpar_hora(linha["'13 - TURNO 3 - INICIO'"])
+            saida3   = limpar_hora(linha["'14 - TURNO 3 - FIM'"])
+
+            # Ignorar se todos os campos estiverem vazios
+            if not any([entrada1, saida1, entrada2, saida2, entrada3, saida3]):
+                continue
+
+            funcionario = Funcionario.query.filter_by(nome=nome).first()
+            if not funcionario:
+                funcionario = Funcionario(nome=nome)
+                db.session.add(funcionario)
+                db.session.commit()
+
+            novo_ponto = Ponto(
+                funcionario_id=funcionario.id,
+                empresa_id=empresa_id,
+                data=datetime.strptime(data, "%d/%m/%Y").date(),
+                entrada1=entrada1,
+                saida1=saida1,
+                entrada2=entrada2,
+                saida2=saida2,
+                entrada3=entrada3,
+                saida3=saida3
+            )
+            db.session.add(novo_ponto)
+
+        db.session.commit()
+        flash("Importação concluída com sucesso.")
+        return redirect(url_for("registro"))
+
+    return render_template("importar.html", empresas=empresas)
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
+
+
