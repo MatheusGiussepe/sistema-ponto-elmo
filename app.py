@@ -68,6 +68,22 @@ def cadastro_funcionario():
     funcionarios = Funcionario.query.order_by(Funcionario.nome.asc()).all()
     return render_template("cadastro_funcionario.html", funcionarios=funcionarios)
 
+@app.route("/editar_ponto/<int:id>", methods=["POST"])
+def editar_ponto(id):
+    ponto = Ponto.query.get_or_404(id)
+    ponto.funcionario_id = request.form["funcionario_id"]
+    ponto.empresa_id = request.form["empresa_id"]
+    ponto.entrada1 = limpar_horario(request.form["entrada1"])
+    ponto.saida1 = limpar_horario(request.form["saida1"])
+    ponto.entrada2 = limpar_horario(request.form["entrada2"])
+    ponto.saida2 = limpar_horario(request.form["saida2"])
+    ponto.entrada3 = limpar_horario(request.form["entrada3"])
+    ponto.saida3 = limpar_horario(request.form["saida3"])
+    db.session.commit()
+    flash("Registro atualizado com sucesso.")
+    return redirect(request.referrer or url_for("registro"))
+
+
 @app.route("/cadastro_empresa", methods=["GET", "POST"])
 def cadastro_empresa():
 
@@ -380,7 +396,7 @@ def excluir_ponto(id):
     ponto = Ponto.query.get_or_404(id)
     db.session.delete(ponto)
     db.session.commit()
-    return redirect(url_for("registro"))
+    return redirect(request.referrer or url_for("registro"))
 
 @app.route("/excluir_funcionario/<int:id>")
 def excluir_funcionario(id):

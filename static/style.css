@@ -495,3 +495,37 @@ body {
     font-size: 20px;
     cursor: pointer;
 }
+
+/* Modal exclusivo do registro.html */
+.registro-modal .modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 10px;
+}
+
+.registro-modal .modal-content label {
+    font-weight: bold;
+    margin-top: 5px;
+    text-align: left;
+}
+
+.registro-modal .modal-content select,
+.registro-modal .modal-content input[type="time"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.registro-modal .modal-content button[type="submit"] {
+    margin-top: 10px;
+    align-self: center;
+    padding: 8px 20px;
+    background-color: #556b2f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
