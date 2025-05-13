@@ -21,6 +21,7 @@ def limpar_horario(valor):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    erro = None
     if request.method == "POST":
         usuario = request.form["usuario"]
         senha = request.form["senha"]
@@ -28,10 +29,9 @@ def login():
             session["usuario_logado"] = True
             return redirect(url_for("registro"))
         else:
-            flash("Usuário ou senha inválidos!")
-            return redirect(url_for("login"))
-    
-    return render_template("login.html")
+            erro = "Usuário ou senha inválidos."
+    return render_template("login.html", erro=erro)
+
 
 @app.route("/logout")
 def logout():
