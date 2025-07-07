@@ -1,23 +1,96 @@
+# ================================
+# Bibliotecas padrão do Python
+# ================================
 import locale
+import os
+from datetime import datetime, time, timedelta
+
+# ================================
+# Bibliotecas externas
+# ================================
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from dotenv import load_dotenv
+from babel.dates import format_datetime
+from sqlalchemy import text
+from flask_migrate import Migrate
+
+# ================================
+# Módulos internos
+# ================================
+from extensoes import db
+from models import Funcionario, Empresa, Ponto
+
+# ================================
+# Configuração regional de datas
+# ================================
 try:
     locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 except locale.Error:
-    locale.setlocale(locale.LC_TIME, '') 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, time, timedelta
-from extensoes import db
-from models import Funcionario, Empresa, Ponto
-from babel.dates import format_datetime
+    locale.setlocale(locale.LC_TIME, '')
 
+# ================================
+# Carregando variáveis do .env
+# ================================
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("❌ DATABASE_URL não encontrado no .env")
+
+# ================================
+# Configuração da aplicação Flask
+# ================================
 app = Flask(__name__)
 app.secret_key = 'é_segredo'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///controle_ponto.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
+
+# ================================
+# Inicializa extensão SQLAlchemy
+# ================================
 db.init_app(app)
+migrate = Migrate(app, db)
+
+# ================================
+# Funções auxiliares
+# ================================
+
+def converter_datas():
+    with app.app_context():
+        pontos = Ponto.query.all()
+        for ponto in pontos:
+            if isinstance(ponto.data, str):
+                try:
+                    # Tente converter do formato ISO
+                    nova_data = datetime.strptime(ponto.data, "%Y-%m-%d").date()
+                except ValueError:
+                    try:
+                        # Tente converter do formato brasileiro
+                        nova_data = datetime.strptime(ponto.data, "%d/%m/%Y").date()
+                    except:
+                        # Valor inválido, use a data atual
+                        nova_data = datetime.now().date()
+                
+                ponto.data = nova_data
+                db.session.commit()
+
+
+converter_datas()
 
 
 def limpar_horario(valor):
     return valor if valor else None
+
+
+# ================================
+# Rotas
+# ================================
+@app.route("/")
+def index():
+    return redirect(url_for("login"))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -31,7 +104,6 @@ def login():
         else:
             erro = "Usuário ou senha inválidos."
     return render_template("login.html", erro=erro)
-
 
 @app.route("/logout")
 def logout():
@@ -47,13 +119,8 @@ def horario_formatado(value):
     minutos = total_minutes % 60
     return f"{horas:02d}:{minutos:02d}"
 
-@app.route("/")
-def index():
-    return redirect(url_for("login"))
-
 @app.route("/funcionarios", methods=["GET", "POST"])
 def cadastro_funcionario():
-    
     if not session.get("usuario_logado"):
         return redirect(url_for("login"))
 
@@ -83,10 +150,8 @@ def editar_ponto(id):
     flash("Registro atualizado com sucesso.")
     return redirect(request.referrer or url_for("registro"))
 
-
 @app.route("/cadastro_empresa", methods=["GET", "POST"])
 def cadastro_empresa():
-
     if not session.get("usuario_logado"):
         return redirect(url_for("login"))
 
@@ -103,7 +168,6 @@ def cadastro_empresa():
 
 @app.route("/lista-registros", methods=["GET"])
 def lista_registros():
-
     if not session.get("usuario_logado"):
         return redirect(url_for("login"))
 
@@ -129,6 +193,22 @@ def lista_registros():
     if funcionario_id or empresa_id or data_ini or data_fim:
         pontos = query.order_by(Ponto.data.asc()).all()
 
+    # Função para converter data para objeto date se necessário
+    def parse_date(date_value):
+        if isinstance(date_value, str):
+            try:
+                # Tenta converter do formato ISO (YYYY-MM-DD)
+                return datetime.strptime(date_value, "%Y-%m-%d").date()
+            except ValueError:
+                try:
+                    # Tenta converter do formato brasileiro (DD/MM/YYYY)
+                    return datetime.strptime(date_value, "%d/%m/%Y").date()
+                except:
+                    # Valor inválido, use a data atual como fallback
+                    return datetime.now().date()
+        return date_value
+
+    # Resto do seu código de cálculo permanece igual...
     INIDIA = time(5, 0)
     FIMDIA = time(22, 0)
     ININOT = time(22, 0)
@@ -140,14 +220,9 @@ def lista_registros():
         return valor
 
     for ponto in pontos:
-        if isinstance(ponto.data, str):
-            ponto.data_obj = datetime.strptime(ponto.data, "%Y-%m-%d")
-        else:
-            ponto.data_obj = ponto.data
-
-    
-            
-
+        # Converta data para objeto date se necessário
+        ponto.data_obj = parse_date(ponto.data)
+        
         ponto.horas_diurnas_reais = timedelta()
         ponto.horas_noturnas_reais = timedelta()
         ponto.horas_fictas = timedelta()
@@ -162,9 +237,8 @@ def lista_registros():
         ponto.extra_100_diurno = timedelta()
         ponto.extra_100_noturno = timedelta()
         ponto.horas_normais = timedelta(hours=8)
-        if ponto.data_obj.weekday() == 5:
+        if ponto.data_obj.weekday() == 5:  # Sábado
             ponto.horas_normais = timedelta(hours=4)
-    
 
         turnos = [(ponto.entrada1, ponto.saida1), (ponto.entrada2, ponto.saida2), (ponto.entrada3, ponto.saida3)]
         minutos_marcados = []
@@ -184,10 +258,6 @@ def lista_registros():
                     minutos_marcados.append(atual)
                     atual += timedelta(minutes=1)
 
-        # Inicialização antes do loop
-        acumulado_domingo = timedelta()
-
-        
         duracao_dentro_domingo = timedelta()
 
         for minuto in minutos_marcados:
@@ -197,10 +267,10 @@ def lista_registros():
                 tipo = "noturna"
 
             # DOMINGO (dia real do minuto)
-            if ponto.data_obj.weekday() == 6:
+            if ponto.data_obj.weekday() == 6:  # Domingo
                 dia_real = minuto.weekday()
 
-                if dia_real == 6:
+                if dia_real == 6:  # Domingo
                     if tipo == "diurna":
                         ponto.extra_100_diurno += timedelta(minutes=1)
                         ponto.horas_diurnas_reais += timedelta(minutes=1)
@@ -210,7 +280,7 @@ def lista_registros():
                     duracao_dentro_domingo += timedelta(minutes=1)
                     continue
 
-                elif dia_real == 0:
+                elif dia_real == 0:  # Segunda-feira
                     if duracao_dentro_domingo < timedelta(hours=8):
                         ponto.horas_normais += timedelta(minutes=1)
                         if tipo == "diurna":
@@ -229,7 +299,7 @@ def lista_registros():
                     continue
 
             # SÁBADO virando domingo
-            if ponto.data_obj.weekday() == 5 and minuto.date() > ponto.data_obj.date():
+            if ponto.data_obj.weekday() == 5 and minuto.date() > ponto.data_obj:
                 if tipo == "diurna":
                     ponto.extra_100_diurno += timedelta(minutes=1)
                     ponto.horas_diurnas_reais += timedelta(minutes=1)
@@ -255,35 +325,32 @@ def lista_registros():
                     ponto.extra_50_noturno_reais += timedelta(minutes=1)
                     ponto.horas_noturnas_reais += timedelta(minutes=1)
 
-
         # DIA DE SEMANA (Segunda a Sexta)
         if ponto.data_obj.weekday() < 5:
             ponto.horas_noturnas = ponto.horas_noturnas_reais * 1.142857
             ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
-            ponto.horas_fictas= ponto.horas_noturnas_reais * 0.142857
+            ponto.horas_fictas = ponto.horas_noturnas_reais * 0.142857
             carga_horaria_diaria = timedelta(hours=8)
             jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
-            
 
             if jornada_total < carga_horaria_diaria:
                 ponto.horas_normais = jornada_total
-                
             else:
                 ponto.horas_normais = carga_horaria_diaria
                 ponto.extra_50_noturno = ( ponto.extra_50_noturno_reais * 1.142857 ) + ( ponto.horas_adicional * 0.142857 )
-                
+
         # SÁBADO
-        if ponto.data_obj.weekday() == 5:
+        elif ponto.data_obj.weekday() == 5:
             ponto.horas_noturnas = ponto.horas_noturnas_reais * 1.142857
             ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
-            ponto.horas_fictas= ponto.horas_noturnas_reais * 0.142857
+            ponto.horas_fictas = ponto.horas_noturnas_reais * 0.142857
             carga_horaria_diaria = timedelta(hours=4)
             jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
             extra_total = max(timedelta(), jornada_total - carga_horaria_diaria)
             ponto.extra_50_noturno = ponto.extra_50_noturno_reais * 1.142857
 
             if ponto.horas_adicional > timedelta():
-                ponto.extra_50_noturno = ponto.horas_adicional * 0.142857
+                ponto.extra_50_noturno += ponto.horas_adicional * 0.142857
 
             if jornada_total < carga_horaria_diaria:
                 ponto.horas_normais = jornada_total
@@ -292,49 +359,45 @@ def lista_registros():
                 ponto.horas_normais = carga_horaria_diaria
 
         # DOMINGO
-        if ponto.data_obj.weekday() == 6:
+        elif ponto.data_obj.weekday() == 6:
             ponto.horas_noturnas = ponto.horas_noturnas_reais * 1.142857
             ponto.horas_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
-            ponto.horas_fictas= ponto.horas_noturnas_reais * 0.142857
+            ponto.horas_fictas = ponto.horas_noturnas_reais * 0.142857
             carga_horaria_diaria = timedelta(hours=8)
             jornada_total = ponto.horas_diurnas_reais + ponto.horas_noturnas
 
             if jornada_total < carga_horaria_diaria:
                 ponto.horas_normais = jornada_total
-                    
             else:
                 ponto.horas_normais = carga_horaria_diaria - (ponto.extra_100_diurno + ponto.extra_100_noturno)
                 ponto.extra_50_noturno = ( ponto.extra_50_noturno_reais * 1.142857 ) + ( ponto.horas_adicional * 0.142857 )
 
-
     total = {
-            "horas_diurnas": timedelta(),
-            "horas_noturnas": timedelta(),
-            "horas_fictas": timedelta(),
-            "horas_total": timedelta(),
-            "horas_normais": timedelta(),
-            "horas_adicional": timedelta(),
-            "extra_50_diurno": timedelta(),
-            "extra_50_noturno": timedelta(),
-            "extra_100_diurno": timedelta(),
-            "extra_100_noturno": timedelta(),
-        }
+        "horas_diurnas": timedelta(),
+        "horas_noturnas": timedelta(),
+        "horas_fictas": timedelta(),
+        "horas_total": timedelta(),
+        "horas_normais": timedelta(),
+        "horas_adicional": timedelta(),
+        "extra_50_diurno": timedelta(),
+        "extra_50_noturno": timedelta(),
+        "extra_100_diurno": timedelta(),
+        "extra_100_noturno": timedelta(),
+    }
 
     for ponto in pontos:
-            total["horas_diurnas"] += ponto.horas_diurnas_reais
-            total["horas_noturnas"] += ponto.horas_noturnas
-            total["horas_fictas"] += ponto.horas_fictas
-            total["horas_total"] += ponto.horas_total
-            total["horas_normais"] += ponto.horas_normais
-            total["horas_adicional"] += ponto.horas_adicional
-            total["extra_50_diurno"] += ponto.extra_50_diurno
-            total["extra_50_noturno"] += ponto.extra_50_noturno
-            total["extra_100_diurno"] += ponto.extra_100_diurno
-            total["extra_100_noturno"] += ponto.extra_100_noturno
-
+        total["horas_diurnas"] += ponto.horas_diurnas_reais
+        total["horas_noturnas"] += ponto.horas_noturnas
+        total["horas_fictas"] += ponto.horas_fictas
+        total["horas_total"] += ponto.horas_total
+        total["horas_normais"] += ponto.horas_normais
+        total["horas_adicional"] += ponto.horas_adicional
+        total["extra_50_diurno"] += ponto.extra_50_diurno
+        total["extra_50_noturno"] += ponto.extra_50_noturno
+        total["extra_100_diurno"] += ponto.extra_100_diurno
+        total["extra_100_noturno"] += ponto.extra_100_noturno
 
     return render_template("lista_registros.html", pontos=pontos, funcionarios=funcionarios, empresas=empresas, total=total)
-
 
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
@@ -344,7 +407,8 @@ def registro():
     if request.method == "POST":
         funcionario_id = request.form["funcionario_id"]
         empresa_id = request.form["empresa_id"]
-        data = request.form["data"]
+        data_str = request.form["data"]
+        data = datetime.strptime(data_str, "%Y-%m-%d").date()  # Convertendo para objeto date
 
         novo_ponto = Ponto(
             funcionario_id=funcionario_id,
@@ -362,7 +426,6 @@ def registro():
         return redirect(url_for("registro"))
 
     query = Ponto.query
-
     funcionario_id = request.args.get("funcionario_id")
     data_ini = request.args.get("data_ini")
     data_fim = request.args.get("data_fim")
@@ -379,13 +442,9 @@ def registro():
         pontos = query.order_by(Ponto.id.asc()).all()
 
     for ponto in pontos:
-        if isinstance(ponto.data, str):
-            ponto.data_obj = datetime.strptime(ponto.data, "%Y-%m-%d")
-        else:
-            ponto.data_obj = ponto.data
+        ponto.data_obj = ponto.data  # Agora é Date, não precisa converter
 
     return render_template("registro.html", funcionarios=funcionarios, empresas=empresas, pontos=pontos)
-
 
 @app.template_filter('formatar_dia_semana')
 def formatar_dia_semana(data):
@@ -466,7 +525,8 @@ def importar_csv():
                 return cpf_raw
 
             cpf = formatar_cpf(linha["'02 - CPF'"].strip().strip("'"))
-            data = linha["'03 - DIA / MÊS'"].strip().strip("'")
+            data_str = linha["'03 - DIA / MÊS'"].strip().strip("'")
+            data = datetime.strptime(data_str, "%d/%m/%Y").date()  # Convertendo para objeto date
 
             entrada1 = limpar_hora(linha["'09 - TURNO 1 - INICIO'"])
             saida1   = limpar_hora(linha["'10 - TURNO 1 - FIM'"])
@@ -488,7 +548,7 @@ def importar_csv():
             novo_ponto = Ponto(
                 funcionario_id=funcionario.id,
                 empresa_id=empresa_id,
-                data=datetime.strptime(data, "%d/%m/%Y").date(),
+                data=data,
                 entrada1=entrada1,
                 saida1=saida1,
                 entrada2=entrada2,
@@ -506,8 +566,16 @@ def importar_csv():
 
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        try:
+            # Teste simples de conexão
+            result = db.session.execute(text("SELECT version()"))
+            print(f"✅ Conexão com o banco estabelecida: {result.scalar()}")
+            
+            # Cria as tabelas
+            db.create_all()
+            print("✅ Tabelas criadas com sucesso!")
+            
+        except Exception as e:
+            print(f"❌ Erro durante a conexão: {str(e)}")
+    
     app.run(debug=True)
-
-
-
