@@ -489,20 +489,24 @@ def importar_csv():
                 return None
             return valor
 
+        def formatar_cpf(cpf_raw):
+            cpf_raw = ''.join(filter(str.isdigit, cpf_raw))
+            if len(cpf_raw) == 11:
+                return f"{cpf_raw[:3]}.{cpf_raw[3:6]}.{cpf_raw[6:9]}-{cpf_raw[9:]}"
+            return cpf_raw
+
         arquivo_stream = TextIOWrapper(arquivo, encoding="utf-8")
         leitor = csv.DictReader(arquivo_stream)
 
+        # Cache de funcionários já consultados no banco
+        funcionarios_cache = {f"{f.nome}|{f.cpf}": f for f in Funcionario.query.all()}
+        novos_pontos = []
+
         for linha in leitor:
             nome = linha["'01 - NOME'"].strip().strip("'")
-            def formatar_cpf(cpf_raw):
-                cpf_raw = ''.join(filter(str.isdigit, cpf_raw))
-                if len(cpf_raw) == 11:
-                    return f"{cpf_raw[:3]}.{cpf_raw[3:6]}.{cpf_raw[6:9]}-{cpf_raw[9:]}"
-                return cpf_raw
-
             cpf = formatar_cpf(linha["'02 - CPF'"].strip().strip("'"))
             data_str = linha["'03 - DIA / MÊS'"].strip().strip("'")
-            data = datetime.strptime(data_str, "%d/%m/%Y").date()  # Convertendo para objeto date
+            data = datetime.strptime(data_str, "%d/%m/%Y").date()
 
             entrada1 = limpar_hora(linha["'09 - TURNO 1 - INICIO'"])
             saida1   = limpar_hora(linha["'10 - TURNO 1 - FIM'"])
@@ -511,15 +515,27 @@ def importar_csv():
             entrada3 = limpar_hora(linha["'13 - TURNO 3 - INICIO'"])
             saida3   = limpar_hora(linha["'14 - TURNO 3 - FIM'"])
 
-            # Ignorar se todos os campos estiverem vazios
             if not any([entrada1, saida1, entrada2, saida2, entrada3, saida3]):
                 continue
 
-            funcionario = Funcionario.query.filter_by(nome=nome).first()
+            chave_func = f"{nome}|{cpf}"
+            funcionario = funcionarios_cache.get(chave_func)
+
             if not funcionario:
                 funcionario = Funcionario(nome=nome, cpf=cpf)
                 db.session.add(funcionario)
-                db.session.commit()
+                db.session.flush()  # cria ID sem fazer commit ainda
+                funcionarios_cache[chave_func] = funcionario
+
+            # Verifica se já existe um ponto na mesma data para o funcionário
+            ponto_existente = Ponto.query.filter_by(
+                funcionario_id=funcionario.id,
+                data=data,
+                empresa_id=empresa_id
+            ).first()
+
+            if ponto_existente:
+                continue  # Já existe, não adiciona duplicado
 
             novo_ponto = Ponto(
                 funcionario_id=funcionario.id,
@@ -532,13 +548,16 @@ def importar_csv():
                 entrada3=entrada3,
                 saida3=saida3
             )
-            db.session.add(novo_ponto)
+            novos_pontos.append(novo_ponto)
 
+        db.session.bulk_save_objects(novos_pontos)
         db.session.commit()
-        flash("Importação concluída com sucesso.")
+
+        flash(f"Importação concluída com sucesso. {len(novos_pontos)} registros adicionados.")
         return redirect(url_for("registro"))
 
     return render_template("importar.html", empresas=empresas)
+
 
 if __name__ == "__main__":
     with app.app_context():
