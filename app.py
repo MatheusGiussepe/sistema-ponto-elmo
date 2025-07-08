@@ -58,32 +58,8 @@ migrate = Migrate(app, db)
 # Funções auxiliares
 # ================================
 
-def converter_datas():
-    with app.app_context():
-        pontos = Ponto.query.all()
-        for ponto in pontos:
-            if isinstance(ponto.data, str):
-                try:
-                    # Tente converter do formato ISO
-                    nova_data = datetime.strptime(ponto.data, "%Y-%m-%d").date()
-                except ValueError:
-                    try:
-                        # Tente converter do formato brasileiro
-                        nova_data = datetime.strptime(ponto.data, "%d/%m/%Y").date()
-                    except:
-                        # Valor inválido, use a data atual
-                        nova_data = datetime.now().date()
-                
-                ponto.data = nova_data
-                db.session.commit()
-
-
-converter_datas()
-
-
 def limpar_horario(valor):
     return valor if valor else None
-
 
 # ================================
 # Rotas
