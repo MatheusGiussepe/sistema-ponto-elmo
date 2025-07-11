@@ -10,21 +10,21 @@
             <label>Funcionário:</label>
             <select name="funcionario_id" required>
                 {% for f in funcionarios %}
-                    <option value="{{ f.id }}">{{ f.nome }}</option>
+                <option value="{{ f.id }}">{{ f.nome }}</option>
                 {% endfor %}
             </select>
 
             <label>Empresa:</label>
             <select name="empresa_id" required>
                 {% for e in empresas %}
-                    <option value="{{ e.id }}">{{ e.nome }}</option>
+                <option value="{{ e.id }}">{{ e.nome }}</option>
                 {% endfor %}
             </select>
 
             <label>Data:</label>
             <input type="date" name="data" required>
         </div>
-        
+
         <div class="form-group">
             <label>Entrada 1:</label>
             <input type="time" name="entrada1">
@@ -51,78 +51,81 @@
         </div>
     </form>
 
-<div>
-    <a style="margin-top: 10px;" href="{{ url_for('importar_csv') }}" class="btn-green">Importar CSV</a>
-</div>
-
-<div class="card p-4 mb-4">
-    <h2>Filtrar Horários Registrados</h2>
-    <form method="GET">
-        <div class="form-group">
-            <label>Funcionário:</label>
-            <select name="funcionario_id">
-                <option value="">Todos</option>
-                {% for f in funcionarios %}
-                    <option value="{{ f.id }}">{{ f.nome }}</option>
-                {% endfor %}
-            </select>
-
-            <label>Data Inicial:</label>
-            <input type="date" name="data_ini">
-
-            <label>Data Final:</label>
-            <input type="date" name="data_fim">
-
-            <button type="submit" class="btn-green">Filtrar</button>
-        </div>
-    </form>
-</div>
-
-        <h2>Horários Registrados</h2>
-        <table class="styled-table">
-            <thead>
-                <tr>
-                    <th>Funcionário</th>
-                    <th>Empresa</th>
-                    <th>Data</th>
-                    <th>Entrada 1</th><th>Saída 1</th>
-                    <th>Entrada 2</th><th>Saída 2</th>
-                    <th>Entrada 3</th><th>Saída 3</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in pontos %}
-                <tr>
-                    <td>{{ p.funcionario.nome }}</td>
-                    <td>{{ p.empresa.nome }}</td>
-                    <td>{{ p.data_obj.strftime('%d/%m') }}</td>
-                    <td>{{ p.entrada1 or '' }}</td>
-                    <td>{{ p.saida1 or '' }}</td>
-                    <td>{{ p.entrada2 or '' }}</td>
-                    <td>{{ p.saida2 or '' }}</td>
-                    <td>{{ p.entrada3 or '' }}</td>
-                    <td>{{ p.saida3 or '' }}</td>
-                    <td>
-                     <button class="btn-edit"
-                        data-id="{{ p.id }}"
-                        data-entrada1="{{ p.entrada1 or '' }}"
-                        data-saida1="{{ p.saida1 or '' }}"
-                        data-entrada2="{{ p.entrada2 or '' }}"
-                        data-saida2="{{ p.saida2 or '' }}"
-                        data-entrada3="{{ p.entrada3 or '' }}"
-                        data-saida3="{{ p.saida3 or '' }}"
-                        data-funcionario="{{ p.funcionario_id }}"
-                        data-empresa="{{ p.empresa_id }}"
-                        onclick="abrirModalComDataset(this)">✏️</button>
-
-                     <a href="{{ url_for('excluir_ponto', id=p.id) }}" class="btn-excluir" title="Excluir">🗑️</a>
-                </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <div>
+        <a style="margin-top: 10px;" href="{{ url_for('importar_csv') }}" class="btn-green">Importar CSV</a>
     </div>
+
+    <div class="card p-4 mb-4">
+        <h2>Filtrar Horários Registrados</h2>
+        <form method="GET">
+            <div class="form-group">
+                <label>Funcionário:</label>
+                <select name="funcionario_id">
+                    <option value="">Todos</option>
+                    {% for f in funcionarios %}
+                    <option value="{{ f.id }}">{{ f.nome }}</option>
+                    {% endfor %}
+                </select>
+
+                <label>Data Inicial:</label>
+                <input type="date" name="data_ini">
+
+                <label>Data Final:</label>
+                <input type="date" name="data_fim">
+
+                <button type="submit" class="btn-green">Filtrar</button>
+            </div>
+        </form>
+    </div>
+
+    <h2>Horários Registrados</h2>
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th>Funcionário</th>
+                <th>Empresa</th>
+                <th>Data</th>
+                <th>Entrada 1</th>
+                <th>Saída 1</th>
+                <th>Entrada 2</th>
+                <th>Saída 2</th>
+                <th>Entrada 3</th>
+                <th>Saída 3</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pontos %}
+            <tr>
+                <td>{{ p.funcionario.nome }}</td>
+                <td>{{ p.empresa.nome }}</td>
+                <td> 
+                    {% if p.data_obj is string %}
+                    {{ p.data_obj }}
+                    {% else %}
+                    {{ p.data_obj.strftime('%d/%m') }}
+                    {% endif %}
+                </td>
+                <td>{{ p.entrada1 or '' }}</td>
+                <td>{{ p.saida1 or '' }}</td>
+                <td>{{ p.entrada2 or '' }}</td>
+                <td>{{ p.saida2 or '' }}</td>
+                <td>{{ p.entrada3 or '' }}</td>
+                <td>{{ p.saida3 or '' }}</td>
+                <td>
+                    <button class="btn-edit" data-id="{{ p.id }}" data-entrada1="{{ p.entrada1 or '' }}"
+                        data-saida1="{{ p.saida1 or '' }}" data-entrada2="{{ p.entrada2 or '' }}"
+                        data-saida2="{{ p.saida2 or '' }}" data-entrada3="{{ p.entrada3 or '' }}"
+                        data-saida3="{{ p.saida3 or '' }}" data-funcionario="{{ p.funcionario_id }}"
+                        data-empresa="{{ p.empresa_id }}" onclick="abrirModalComDataset(this)">✏️</button>
+
+                    <a href="{{ url_for('excluir_ponto', id=p.id) }}" class="btn-excluir" title="Excluir">🗑️</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 </div>
 
 <!-- Modal de edição de horário -->
@@ -135,14 +138,14 @@
             <label>Funcionário:</label>
             <select name="funcionario_id" id="edit-funcionario-id" required>
                 {% for f in funcionarios %}
-                    <option value="{{ f.id }}">{{ f.nome }}</option>
+                <option value="{{ f.id }}">{{ f.nome }}</option>
                 {% endfor %}
             </select>
 
             <label>Empresa:</label>
             <select name="empresa_id" id="edit-empresa-id" required>
                 {% for e in empresas %}
-                    <option value="{{ e.id }}">{{ e.nome }}</option>
+                <option value="{{ e.id }}">{{ e.nome }}</option>
                 {% endfor %}
             </select>
 
@@ -165,24 +168,24 @@
 
 
 <script>
-function abrirModalComDataset(botao) {
-    document.getElementById("modal-editar-ponto").style.display = "block";
-    document.getElementById("form-editar-ponto").action = "/editar_ponto/" + botao.dataset.id;
+    function abrirModalComDataset(botao) {
+        document.getElementById("modal-editar-ponto").style.display = "block";
+        document.getElementById("form-editar-ponto").action = "/editar_ponto/" + botao.dataset.id;
 
-    document.getElementById("edit-entrada1").value = botao.dataset.entrada1;
-    document.getElementById("edit-saida1").value = botao.dataset.saida1;
-    document.getElementById("edit-entrada2").value = botao.dataset.entrada2;
-    document.getElementById("edit-saida2").value = botao.dataset.saida2;
-    document.getElementById("edit-entrada3").value = botao.dataset.entrada3;
-    document.getElementById("edit-saida3").value = botao.dataset.saida3;
+        document.getElementById("edit-entrada1").value = botao.dataset.entrada1;
+        document.getElementById("edit-saida1").value = botao.dataset.saida1;
+        document.getElementById("edit-entrada2").value = botao.dataset.entrada2;
+        document.getElementById("edit-saida2").value = botao.dataset.saida2;
+        document.getElementById("edit-entrada3").value = botao.dataset.entrada3;
+        document.getElementById("edit-saida3").value = botao.dataset.saida3;
 
-    document.getElementById("edit-funcionario-id").value = botao.dataset.funcionario;
-    document.getElementById("edit-empresa-id").value = botao.dataset.empresa;
-}
+        document.getElementById("edit-funcionario-id").value = botao.dataset.funcionario;
+        document.getElementById("edit-empresa-id").value = botao.dataset.empresa;
+    }
 
-function fecharModalPonto() {
-    document.getElementById("modal-editar-ponto").style.display = "none";
-}
+    function fecharModalPonto() {
+        document.getElementById("modal-editar-ponto").style.display = "none";
+    }
 </script>
 
 

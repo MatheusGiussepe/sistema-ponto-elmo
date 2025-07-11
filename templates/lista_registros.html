@@ -10,7 +10,7 @@
         <select name="funcionario_id" id="funcionario_id">
             <option value="">Todos</option>
             {% for f in funcionarios %}
-                <option value="{{ f.id }}">{{ f.nome }}</option>
+            <option value="{{ f.id }}">{{ f.nome }}</option>
             {% endfor %}
         </select>
 
@@ -18,7 +18,7 @@
         <select name="empresa_id" id="empresa_id">
             <option value="">Todas</option>
             {% for e in empresas %}
-                <option value="{{ e.id }}">{{ e.nome }}</option>
+            <option value="{{ e.id }}">{{ e.nome }}</option>
             {% endfor %}
         </select>
 
@@ -42,9 +42,12 @@
                     <th>Empresa</th>
                     <th>Data</th>
                     <th>Dia da Semana</th>
-                    <th>Entrada 1</th><th>Saída 1</th>
-                    <th>Entrada 2</th><th>Saída 2</th>
-                    <th>Entrada 3</th><th>Saída 3</th>
+                    <th>Entrada 1</th>
+                    <th>Saída 1</th>
+                    <th>Entrada 2</th>
+                    <th>Saída 2</th>
+                    <th>Entrada 3</th>
+                    <th>Saída 3</th>
                     <th>Horas Diurnas</th>
                     <th>Horas Noturnas</th>
                     <th>Horas Fictas</th>
@@ -62,11 +65,20 @@
                 <tr class="{% if p.data_obj | formatar_dia_semana == 'Domingo' %}domingo{% endif %}">
                     <td>{{ p.funcionario.nome }}</td>
                     <td>{{ p.empresa.nome }}</td>
-                    <td>{{ p.data_obj.strftime('%d/%m') }}</td>
+                    <td>
+                        {% if p.data_obj is string %}
+                        {{ p.data_obj }}
+                        {% else %}
+                        {{ p.data_obj.strftime('%d/%m') }}
+                        {% endif %}
+                    </td>
                     <td>{{ p.data_obj | formatar_dia_semana }}</td>
-                    <td>{{ p.entrada1 or '' }}</td><td>{{ p.saida1 or '' }}</td>
-                    <td>{{ p.entrada2 or '' }}</td><td>{{ p.saida2 or '' }}</td>
-                    <td>{{ p.entrada3 or '' }}</td><td>{{ p.saida3 or '' }}</td>
+                    <td>{{ p.entrada1 or '' }}</td>
+                    <td>{{ p.saida1 or '' }}</td>
+                    <td>{{ p.entrada2 or '' }}</td>
+                    <td>{{ p.saida2 or '' }}</td>
+                    <td>{{ p.entrada3 or '' }}</td>
+                    <td>{{ p.saida3 or '' }}</td>
                     <td>{{ p.horas_diurnas_reais|horario_formatado }}</td>
                     <td>{{ p.horas_noturnas|horario_formatado }}</td>
                     <td>{{ p.horas_fictas|horario_formatado }}</td>
