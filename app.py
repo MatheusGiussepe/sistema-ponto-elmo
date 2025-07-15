@@ -169,22 +169,18 @@ def lista_registros():
     if funcionario_id or empresa_id or data_ini or data_fim:
         pontos = query.order_by(Ponto.data.asc()).all()
 
-    # Função para converter data para objeto date se necessário
     def parse_date(date_value):
         if isinstance(date_value, str):
             try:
-                # Tenta converter do formato ISO (YYYY-MM-DD)
                 return datetime.strptime(date_value, "%Y-%m-%d").date()
             except ValueError:
                 try:
-                    # Tenta converter do formato brasileiro (DD/MM/YYYY)
                     return datetime.strptime(date_value, "%d/%m/%Y").date()
                 except:
-                    # Valor inválido, use a data atual como fallback
                     return datetime.now().date()
         return date_value
 
-    # Resto do seu código de cálculo permanece igual...
+    
     INIDIA = time(5, 0)
     FIMDIA = time(22, 0)
     ININOT = time(22, 0)
@@ -196,9 +192,7 @@ def lista_registros():
         return valor
 
     for ponto in pontos:
-        # Converta data para objeto date se necessário
         ponto.data_obj = parse_date(ponto.data)
-        
         ponto.horas_diurnas_reais = timedelta()
         ponto.horas_noturnas_reais = timedelta()
         ponto.horas_fictas = timedelta()
@@ -384,7 +378,7 @@ def registro():
         funcionario_id = request.form["funcionario_id"]
         empresa_id = request.form["empresa_id"]
         data_str = request.form["data"]
-        data = datetime.strptime(data_str, "%Y-%m-%d").date()  # Convertendo para objeto date
+        data = datetime.strptime(data_str, "%Y-%m-%d").date()  
 
         novo_ponto = Ponto(
             funcionario_id=funcionario_id,
@@ -418,7 +412,7 @@ def registro():
         pontos = query.order_by(Ponto.id.asc()).all()
 
     for ponto in pontos:
-        ponto.data_obj = ponto.data  # Agora é Date, não precisa converter
+        ponto.data_obj = ponto.data  
 
     return render_template("registro.html", funcionarios=funcionarios, empresas=empresas, pontos=pontos)
 
@@ -498,7 +492,7 @@ def importar_csv():
         arquivo_stream = TextIOWrapper(arquivo, encoding="utf-8")
         leitor = csv.DictReader(arquivo_stream)
 
-        # Cache de funcionários já consultados no banco
+        
         funcionarios_cache = {f"{f.nome}|{f.cpf}": f for f in Funcionario.query.all()}
         novos_pontos = []
 
@@ -524,14 +518,13 @@ def importar_csv():
             if not funcionario:
                 funcionario = Funcionario(nome=nome, cpf=cpf)
                 db.session.add(funcionario)
-                db.session.flush()  # cria ID sem fazer commit ainda
+                db.session.flush()  
                 funcionarios_cache[chave_func] = funcionario
 
             # Verifica se já existe um ponto na mesma data para o funcionário
             ponto_existente = Ponto.query.filter_by(
                 funcionario_id=funcionario.id,
                 data=data,
-                empresa_id=empresa_id
             ).first()
 
             if ponto_existente:
@@ -562,11 +555,9 @@ def importar_csv():
 if __name__ == "__main__":
     with app.app_context():
         try:
-            # Teste simples de conexão
             result = db.session.execute(text("SELECT version()"))
             print(f"✅ Conexão com o banco estabelecida: {result.scalar()}")
             
-            # Cria as tabelas
             db.create_all()
             print("✅ Tabelas criadas com sucesso!")
             
